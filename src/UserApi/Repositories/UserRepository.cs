@@ -25,36 +25,43 @@ public class UserRepository : IUserRepository
         {
             var user = new User
             {
-                Id = reader.GetInt32(0),
-                Name = reader.GetString(1),
-                Username = reader.GetString(2),
-                Email = reader.GetString(3),
-                CreatedAt = reader.GetDateTime(4)
+                Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                Name = reader.GetString(reader.GetOrdinal("Name")),
+                Username = reader.GetString(reader.GetOrdinal("Username")),
+                Email = reader.GetString(reader.GetOrdinal("Email")),
+                CreatedAt = reader.GetDateTime(reader.GetOrdinal("CreatedAt"))
             };
             users.Add(user);
         }
         return users;
     }
 
-    public async Task<User> GetUserByIdAsync(int Id)
+    public async Task<User?> GetUserByIdAsync(int Id)
     {
-        var User = new User();
         using var connection = new SqlConnection(_connectionString);
-        using var command = new SqlCommand(@"SELECT Id,Name,UserName,Email,CreatedAt
-                                             FROM Users
-                                             WHERE Id = @Id", connection);
-        command.Parameters.AddWithValue("@Id", Id);
+
+        using var command = new SqlCommand(@"
+        SELECT Id, Name, UserName, Email, CreatedAt
+        FROM Users
+        WHERE Id = @Id", connection);
+
+        command.Parameters.Add("@Id", SqlDbType.Int).Value = Id;
+
         await connection.OpenAsync();
+
         using var reader = await command.ExecuteReaderAsync();
-        while (await reader.ReadAsync())
+
+        if (!await reader.ReadAsync())
+            return null;
+
+        return new User
         {
-            User.Id = reader.GetInt32(0);
-            User.Name = reader.GetString(1);
-            User.Username = reader.GetString(2);
-            User.Email = reader.GetString(3);
-            User.CreatedAt = reader.GetDateTime(4);
-        }
-        return User;
+            Id = reader.GetInt32(reader.GetOrdinal("Id")),
+            Name = reader.GetString(reader.GetOrdinal("Name")),
+            Username = reader.GetString(reader.GetOrdinal("Username")),
+            Email = reader.GetString(reader.GetOrdinal("Email")),
+            CreatedAt = reader.GetDateTime(reader.GetOrdinal("CreatedAt"))
+        };
     }
 
     public async Task SaveUsersAsync(List<User> users)
@@ -91,10 +98,10 @@ public class UserRepository : IUserRepository
             VALUES (@Id, @Name, @Username, @Email, GETDATE())
         END", connection);
 
-        command.Parameters.AddWithValue("@Id", user.Id);
-        command.Parameters.AddWithValue("@Name", user.Name);
-        command.Parameters.AddWithValue("@Username", user.Username);
-        command.Parameters.AddWithValue("@Email", user.Email);
+        command.Parameters.Add("@Id", System.Data.SqlDbType.Int).Value = user.Id;
+        command.Parameters.Add("@Name", System.Data.SqlDbType.NVarChar).Value = user.Name;
+        command.Parameters.Add("@Username", System.Data.SqlDbType.NVarChar).Value = user.Username;
+        command.Parameters.Add("@Email", System.Data.SqlDbType.NVarChar).Value = user.Email;
 
         await command.ExecuteNonQueryAsync();
     }

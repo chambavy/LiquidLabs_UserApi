@@ -1,6 +1,7 @@
 using UserApi.Repositories;
 using UserApi.Services;
 using UserApi.ExternalApis;
+using UserApi.Middleware;
 using Swashbuckle.AspNetCore;
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,13 +15,17 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddHttpClient<JsonPlaceHolderClient>();
+builder.Services.AddHttpClient<JsonPlaceholderClient>(client =>
+{
+    client.BaseAddress = new Uri("https://jsonplaceholder.typicode.com/");
+});
 
 var app = builder.Build();
+app.UseMiddleware<ExceptionMiddleware>();
 
 // Configure the HTTP request pipeline.
 
-    app.UseSwagger();
+app.UseSwagger();
     app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
