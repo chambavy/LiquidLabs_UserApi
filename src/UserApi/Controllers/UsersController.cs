@@ -1,24 +1,25 @@
 using Microsoft.AspNetCore.Mvc;
+using UserApi.Services;
 [ApiController]
 [Route("api/[controller]")]
 public class UsersController : ControllerBase
 {  
-    private readonly IUserRepository _userRepository;
-    public UsersController(IUserRepository userRepository)
+    private readonly IUserService _userService;
+    public UsersController(IUserService userService)
     {
-        _userRepository = userRepository;
+        _userService = userService;
     }
     [HttpGet]
     public async Task<IActionResult> GetAllUsers()
     {
-        var users = await _userRepository.GetAllUsersAsync();
+        var users = await _userService.GetAllUsersAsync();
         return Ok(users);
     }
-    [HttpGet("{ExternalId}")]
-    public async Task<IActionResult> GetUserById(int ExternalId)
+    [HttpGet("{Id}")]
+    public async Task<IActionResult> GetUserById(int Id)
     {
-        var user = await _userRepository.GetUserById(ExternalId);
-        if (user == null || user.ExternalId == 0)
+        var user = await _userService.GetUserByIdAsync(Id);
+        if (user == null || user.Id == 0)
         {
             return NotFound();
         }

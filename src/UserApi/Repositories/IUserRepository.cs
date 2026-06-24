@@ -2,5 +2,7 @@ using UserApi.Models;
 public interface IUserRepository
 {
     Task<List<User>> GetAllUsersAsync();
-    Task<User> GetUserById(int ExternalId);
+    Task<User> GetUserByIdAsync(int Id);
+    Task SaveUsersAsync(List<User> users);
+    Task SaveUserAsync(User user);
 }
