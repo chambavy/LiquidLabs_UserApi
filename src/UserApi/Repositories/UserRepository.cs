@@ -12,15 +12,39 @@ public class UserRepository : IUserRepository
         _connectionString = configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException("DefaultConnection string is missing."); 
     }
-    public async Task<List<User>> GetAllUsersAsync()
+    public async Task<List<User>> GetAllUsersAsync(int? pageNumber, int? pageSize)
     {
         var users = new List<User>();
         using var connection = new SqlConnection(_connectionString);
-        using var command = new SqlCommand(@"SELECT Id,Name,UserName,Email,CreatedAt
-                                             FROM Users
-                                             ORDER BY Id", connection);
+        string query;
+        if (pageNumber.HasValue && pageSize.HasValue)
+        {
+            query = @"
+        SELECT Id,Name,UserName,Email,CreatedAt
+        FROM Users
+        ORDER BY Id
+        OFFSET @Offset ROWS
+        FETCH NEXT @PageSize ROWS ONLY";
+        }
+        else
+        {
+            query = @"
+        SELECT Id,Name,UserName,Email,CreatedAt
+        FROM Users
+        ORDER BY Id";
+        }
+        using var command = new SqlCommand(query, connection);
+        if (pageNumber.HasValue && pageSize.HasValue)
+        {
+            var offset = (pageNumber - 1) * pageSize;
+            command.Parameters.Add("@Offset", SqlDbType.Int).Value = offset;
+            command.Parameters.Add("@PageSize", SqlDbType.Int).Value = pageSize;
+        }
+            
+
         await connection.OpenAsync();
         using var reader = await command.ExecuteReaderAsync();
+        
         while (await reader.ReadAsync())
         {
             var user = new User
@@ -104,5 +128,18 @@ public class UserRepository : IUserRepository
         command.Parameters.Add("@Email", System.Data.SqlDbType.NVarChar).Value = user.Email;
 
         await command.ExecuteNonQueryAsync();
+    }
+
+    public async Task<int> GetUserCountAsync()
+    {
+        using var connection = new SqlConnection(_connectionString);
+
+        using var command = new SqlCommand(
+            "SELECT COUNT(*) FROM Users",
+            connection);
+
+        await connection.OpenAsync();
+
+        return (int)await command.ExecuteScalarAsync();
     }
 }

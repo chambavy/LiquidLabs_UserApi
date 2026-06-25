@@ -11,16 +11,16 @@ public class UsersController : ControllerBase
         _userService = userService;
     }
     [HttpGet]
-    public async Task<IActionResult> GetAllUsers()
+    public async Task<IActionResult> GetAllUsers([FromQuery] PaginationRequest request)
     {
-        var users = await _userService.GetAllUsersAsync();
-
-        return Ok(new ApiResponse<List<User>>
+        if (request.PageNumber.HasValue && request.PageSize.HasValue)
         {
-            Success = true,
-            Data = users,
-            Message = users.Count == 0 ? "No users available" : null
-        });
+            request.PageNumber = Math.Max(request.PageNumber, 1);
+            request.PageSize = Math.Clamp(request.PageSize, 1, 100);
+        }   
+        var users = await _userService.GetAllUsersAsync(request.PageNumber,request.PageSize);
+
+        return Ok(users);
     }
     [HttpGet("{Id}")]
     public async Task<IActionResult> GetUserById(int Id)

@@ -28,7 +28,6 @@ public class ExceptionMiddleware
                 Success = false,
                 Message = "Internal server error"
             };
-
             await context.Response.WriteAsJsonAsync(response);
         }
     }
