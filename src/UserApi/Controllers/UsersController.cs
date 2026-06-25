@@ -15,8 +15,8 @@ public class UsersController : ControllerBase
     {
         if (request.PageNumber.HasValue && request.PageSize.HasValue)
         {
-            request.PageNumber = Math.Max(request.PageNumber, 1);
-            request.PageSize = Math.Clamp(request.PageSize, 1, 100);
+            request.PageNumber = Math.Max(request.PageNumber.Value, 1);
+            request.PageSize = Math.Clamp(request.PageSize.Value, 1, 100);
         }   
         var users = await _userService.GetAllUsersAsync(request.PageNumber,request.PageSize);
 
